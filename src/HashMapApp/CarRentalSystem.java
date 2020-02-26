@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Project: Curs26
@@ -12,8 +13,8 @@ import java.util.Scanner;
  */
 public class CarRentalSystem {
     private static Scanner scan = new Scanner(System.in);
-    private Map<String, String> rentedCars = new HashMap<String, String>(100, 5f);
-
+    private Map<String, String> rentedCarsList = new HashMap<String, String>();
+    private Map<String, RentedCars> rentedCarsOwner = new HashMap<>();
 
     private static String getPlateNo(){
         System.out.println("Introduceti numarul de inmatriculare: ");
@@ -25,18 +26,32 @@ public class CarRentalSystem {
         return scan.nextLine();
     }
 
+    // Getter for HashMap -> rentedCars
+    public Map<String, String> getRentedCars() {
+        return this.rentedCarsList;
+    }
+
 
     // add a new (key, value) pair
     public void rentCar(String plateNo, String ownerName){
-        if (!this.rentedCars.containsKey(plateNo)){
-            this.rentedCars.put(plateNo, ownerName);
+        if (!this.rentedCarsList.containsKey(plateNo)){
+            this.rentedCarsList.put(plateNo, ownerName);
+        }
+
+        if (this.rentedCarsOwner.containsKey(ownerName)){
+            RentedCars cars = this.rentedCarsOwner.get(ownerName);
+            cars.addCars(plateNo);
+        }else {
+            RentedCars cars = new RentedCars();
+            cars.addCars(plateNo);
+            this.rentedCarsOwner.put(ownerName, cars);
         }
     }
 
 
     // search for a key in hashtable
     public boolean isCarRent(String plateNo){
-        if (this.rentedCars.containsKey(plateNo)){
+        if (this.rentedCarsList.containsKey(plateNo)){
             return true;
         }
         return false;
@@ -45,8 +60,8 @@ public class CarRentalSystem {
 
     // get the value associated to a key
     public String isOwnerName(String plateNo){
-        if (this.rentedCars.containsKey(plateNo)) {
-            return this.rentedCars.get(plateNo);
+        if (this.rentedCarsList.containsKey(plateNo)) {
+            return this.rentedCarsList.get(plateNo);
         }
         return "The owner is not in the list";
     }
@@ -54,9 +69,9 @@ public class CarRentalSystem {
 
     // remove an existing (key, value) pair
     public void returnCar(String plateNo){
-        if (this.rentedCars.containsKey(plateNo)){
+        if (this.rentedCarsList.containsKey(plateNo)){
             System.out.println("The pair (key, value) is removed from the hashtable!");
-            this.rentedCars.remove(plateNo);
+            this.rentedCarsList.remove(plateNo);
             return;
         }
 
@@ -66,12 +81,31 @@ public class CarRentalSystem {
 
     // total number of rented cars
     public int totalRentedCars(){
-        return this.rentedCars.size();
+        return this.rentedCarsList.size();
+    }
+
+
+    // total rented cars for one owner
+    public int getOwnerCarsNo(String ownerName) {
+        if (!this.rentedCarsOwner.containsKey(ownerName)) {
+            System.out.println(("The owner is not on the list!"));
+            return 0;
+        }
+
+        return this.rentedCarsOwner.get(ownerName).getCarsNo();
+    }
+
+
+    // rented cars list for one owner
+    public void getOwnerCarList(String ownerName){
+        if (this.rentedCarsOwner.containsKey(ownerName)){
+            this.rentedCarsOwner.get(ownerName).getCarList();
+        }
     }
 
 
     public void iterateForEachLoop(){
-        for (Map.Entry mapElement : this.rentedCars.entrySet()){
+        for (Map.Entry mapElement : this.rentedCarsList.entrySet()){
             System.out.println("Key: " + mapElement.getKey());
             System.out.println("Value: " + mapElement.getValue());
         }
@@ -80,7 +114,7 @@ public class CarRentalSystem {
 
 
     public void iterateIterator(){
-        Iterator iterator = this.rentedCars.entrySet().iterator();
+        Iterator iterator = this.rentedCarsList.entrySet().iterator();
 
         while (iterator.hasNext()){
             Map.Entry mapElement = (Map.Entry) iterator.next();
@@ -97,6 +131,7 @@ public class CarRentalSystem {
         System.out.println("check        - Verifica daca o masina este deja luata");
         System.out.println("remove       - Sterge o masina existenta din hashtable");
         System.out.println("getOwner     - Afiseaza proprietarul curent al masinii");
+        System.out.println("totalRentedCars     - Afiseaza numarul de masini inchiriate ");
         System.out.println("quit         - Inchide aplicatia");
     }
 
@@ -123,6 +158,18 @@ public class CarRentalSystem {
                     break;
                 case "getOwner":
                     System.out.println(isOwnerName(getPlateNo()) + "\n");
+                    break;
+                case "totalRentedCars":
+                    System.out.println("Total rented cars = " + this.totalRentedCars());
+                    break;
+                case "ownerCarsNo":
+                    String owner = getOwnerName();
+                    System.out.println("Cars number for " + owner + " is " + this.getOwnerCarsNo(owner));
+                    break;
+                case "ownerCarsList":
+                    String owner1 = getOwnerName();
+                    System.out.println("Cars list for " + owner1 + ": ");
+                    this.getOwnerCarList(owner1);
                     break;
                 case "iterate1":
                     System.out.println("Iterate with FOR EACH LOOP");
