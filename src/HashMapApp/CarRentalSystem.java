@@ -33,33 +33,46 @@ public class CarRentalSystem {
 
 
     // add a new (key, value) pair
-    public void rentCar(String plateNo, String ownerName){
-        if (!this.rentedCarsList.containsKey(plateNo)){
-            this.rentedCarsList.put(plateNo, ownerName);
+    public void rentCar(String plateNo, String ownerName) throws NullPointerException{
+        if (plateNo == null || ownerName == null){
+            return;
         }
 
-        if (this.rentedCarsOwner.containsKey(ownerName)){
-            RentedCars cars = this.rentedCarsOwner.get(ownerName);
-            cars.addCars(plateNo);
-        }else {
-            RentedCars cars = new RentedCars();
-            cars.addCars(plateNo);
-            this.rentedCarsOwner.put(ownerName, cars);
+        try {
+            if (!this.rentedCarsList.containsKey(plateNo)) {
+                this.rentedCarsList.put(plateNo, ownerName);
+            }
+
+            if (this.rentedCarsOwner.containsKey(ownerName)) {
+                RentedCars cars = this.rentedCarsOwner.get(ownerName);
+                cars.addCars(plateNo);
+            } else {
+                RentedCars cars = new RentedCars();
+                cars.addCars(plateNo);
+                this.rentedCarsOwner.put(ownerName, cars);
+            }
+        }catch (NullPointerException e){
+            e.printStackTrace();
         }
     }
 
 
     // search for a key in hashtable
-    public boolean isCarRent(String plateNo){
-        if (this.rentedCarsList.containsKey(plateNo)){
-            return true;
+    public boolean isCarRent(String plateNo)throws NullPointerException{
+        if (plateNo == null){
+            throw new NullPointerException("Plate number is null!");
         }
-        return false;
+
+        return this.rentedCarsList.containsKey(plateNo);
     }
 
 
     // get the value associated to a key
     public String isOwnerName(String plateNo){
+        if (plateNo == null){
+            return "Input plateNo is null";
+        }
+
         if (this.rentedCarsList.containsKey(plateNo)) {
             return this.rentedCarsList.get(plateNo);
         }
@@ -68,7 +81,11 @@ public class CarRentalSystem {
 
 
     // remove an existing (key, value) pair
-    public void returnCar(String plateNo){
+    public void returnCar(String plateNo) throws NullPointerException{
+        if (plateNo == null){
+            throw  new NullPointerException("Plate number is null!");
+        }
+
         if (this.rentedCarsList.containsKey(plateNo)){
             System.out.println("The pair (key, value) is removed from the hashtable!");
             this.rentedCarsList.remove(plateNo);
@@ -80,7 +97,7 @@ public class CarRentalSystem {
 
 
     // total number of rented cars
-    public int totalRentedCars(){
+    public int totalRentedCars()throws NullPointerException{
         return this.rentedCarsList.size();
     }
 
@@ -132,6 +149,8 @@ public class CarRentalSystem {
         System.out.println("remove       - Sterge o masina existenta din hashtable");
         System.out.println("getOwner     - Afiseaza proprietarul curent al masinii");
         System.out.println("totalRentedCars     - Afiseaza numarul de masini inchiriate ");
+        System.out.println("ownerCarsNo - Afiseaza numarul de masini inchiriate de proprietarul temporar");
+        System.out.println("ownerCarsList - Afiseaza lista de masini inchiriate de proprietarul temporar");
         System.out.println("quit         - Inchide aplicatia");
     }
 
@@ -151,7 +170,12 @@ public class CarRentalSystem {
                     this.rentCar(getPlateNo(), getOwnerName());
                     break;
                 case "check":
-                    System.out.println(this.isCarRent(getPlateNo()) + "\n");
+                    try {
+                        System.out.println(this.isCarRent(getPlateNo()) + "\n");
+                    }catch (NullPointerException e){
+                        System.out.println(e.getMessage());
+                        e.printStackTrace();
+                    }
                     break;
                 case "remove":
                     this.returnCar(getPlateNo());
@@ -180,6 +204,7 @@ public class CarRentalSystem {
                     this.iterateIterator();
                     break;
                 case "quit":
+                    quit = true;
                     break;
                 default:
                     System.out.println("Invalid command!");

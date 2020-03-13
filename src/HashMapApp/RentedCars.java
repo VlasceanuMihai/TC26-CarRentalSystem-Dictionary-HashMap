@@ -15,8 +15,8 @@ public class RentedCars{
 
 
     // add cars to list/set
-    public void addCars(String car){
-        this.carsList.add(car);
+    public void addCars(String plateNo){
+        this.carsList.add(plateNo);
     }
 
     // total rented cars for one owner
