@@ -1,5 +1,6 @@
 package HashMapApp;
 
+import java.io.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -11,10 +12,15 @@ import java.util.concurrent.ExecutionException;
  * Author: mihai
  * Date: 2/20/2020
  */
-public class CarRentalSystem {
+public class CarRentalSystem implements Serializable {
     private static Scanner scan = new Scanner(System.in);
     private Map<String, String> rentedCarsList = new HashMap<String, String>();
-    private Map<String, RentedCars> rentedCarsOwner = new HashMap<>();
+    private Map<String, RentedCars> ownerCars = new HashMap<>();
+
+    // version ID used for serialization
+    private static final long serialVersionUID = 1L;
+
+
 
     private static String getPlateNo(){
         System.out.println("Introduceti numarul de inmatriculare: ");
@@ -26,11 +32,6 @@ public class CarRentalSystem {
         return scan.nextLine();
     }
 
-    // Getter for HashMap -> rentedCars
-    public Map<String, String> getRentedCars() {
-        return this.rentedCarsList;
-    }
-
 
     // add a new (key, value) pair
     public void rentCar(String plateNo, String ownerName) throws NullPointerException{
@@ -40,16 +41,18 @@ public class CarRentalSystem {
 
         try {
             if (!this.rentedCarsList.containsKey(plateNo)) {
+                System.out.println("The pair (" + plateNo + ", " + ownerName + ") is added into the hashtable!");
                 this.rentedCarsList.put(plateNo, ownerName);
             }
 
-            if (this.rentedCarsOwner.containsKey(ownerName)) {
-                RentedCars cars = this.rentedCarsOwner.get(ownerName);
+            if (this.ownerCars.containsKey(ownerName)) {
+                RentedCars cars = this.ownerCars.get(ownerName);
                 cars.addCars(plateNo);
             } else {
+                System.out.println("The pair (" + ownerName + ", " + plateNo + ") is added into the owner cars list!");
                 RentedCars cars = new RentedCars();
                 cars.addCars(plateNo);
-                this.rentedCarsOwner.put(ownerName, cars);
+                this.ownerCars.put(ownerName, cars);
             }
         }catch (NullPointerException e){
             e.printStackTrace();
@@ -81,18 +84,23 @@ public class CarRentalSystem {
 
 
     // remove an existing (key, value) pair
-    public void returnCar(String plateNo) throws NullPointerException{
+    public void returnCar(String plateNo, String ownerName) throws NullPointerException{
         if (plateNo == null){
             throw  new NullPointerException("Plate number is null!");
         }
 
-        if (this.rentedCarsList.containsKey(plateNo)){
-            System.out.println("The pair (key, value) is removed from the hashtable!");
+        if (!this.rentedCarsList.containsKey(plateNo)){
+            System.out.println("The pair (plateNo, ownerName) is not in the hashtable");
+        } else{
+            System.out.println("The pair (plateNo, ownerName) is removed from the hashtable!");
             this.rentedCarsList.remove(plateNo);
-            return;
         }
 
-        System.out.println("The pair (key, value) is not in the hashtable");
+        if (this.ownerCars.containsKey(ownerName)) {
+            System.out.println("The pair (ownerName, ownerCarsList) is removed from the owner cars list!");
+            RentedCars cars = this.ownerCars.get(ownerName);
+            cars.removeCars(plateNo);
+        }
     }
 
 
@@ -104,19 +112,19 @@ public class CarRentalSystem {
 
     // total rented cars for one owner
     public int getOwnerCarsNo(String ownerName) {
-        if (!this.rentedCarsOwner.containsKey(ownerName)) {
+        if (!this.ownerCars.containsKey(ownerName)) {
             System.out.println(("The owner is not on the list!"));
             return 0;
         }
 
-        return this.rentedCarsOwner.get(ownerName).getCarsNo();
+        return this.ownerCars.get(ownerName).getCarsNo();
     }
 
 
     // rented cars list for one owner
     public void getOwnerCarList(String ownerName){
-        if (this.rentedCarsOwner.containsKey(ownerName)){
-            this.rentedCarsOwner.get(ownerName).getCarList();
+        if (this.ownerCars.containsKey(ownerName)){
+            this.ownerCars.get(ownerName).getCarList();
         }
     }
 
@@ -155,7 +163,27 @@ public class CarRentalSystem {
     }
 
 
-    public void run(){
+
+    // Save data intro 'saveFile.dat' file
+    private void saveData(CarRentalSystem carRentalSystem, String file) throws IOException{
+        try (ObjectOutputStream binaryFileOut = new ObjectOutputStream(
+                new BufferedOutputStream(new FileOutputStream(file)))){
+            binaryFileOut.writeObject(carRentalSystem);
+        }
+    }
+
+
+    // Delete data from 'saveFile.dat' file
+    private void reset(String file)throws IOException {
+        try (ObjectOutputStream reset = new ObjectOutputStream(
+                new BufferedOutputStream(new FileOutputStream(file)))){
+            reset.reset();
+        }
+    }
+
+
+
+    public void run(CarRentalSystem carRentalSystem, String file) throws IOException {
         boolean quit = false;
 
         while (!quit){
@@ -166,9 +194,11 @@ public class CarRentalSystem {
                 case "help":
                     printCommandsList();
                     break;
+
                 case "add":
                     this.rentCar(getPlateNo(), getOwnerName());
                     break;
+
                 case "check":
                     try {
                         System.out.println(this.isCarRent(getPlateNo()) + "\n");
@@ -177,35 +207,51 @@ public class CarRentalSystem {
                         e.printStackTrace();
                     }
                     break;
+
                 case "remove":
-                    this.returnCar(getPlateNo());
+                    this.returnCar(getPlateNo(), getOwnerName());
                     break;
+
                 case "getOwner":
                     System.out.println(isOwnerName(getPlateNo()) + "\n");
                     break;
+
                 case "totalRentedCars":
                     System.out.println("Total rented cars = " + this.totalRentedCars());
                     break;
+
                 case "ownerCarsNo":
                     String owner = getOwnerName();
                     System.out.println("Cars number for " + owner + " is " + this.getOwnerCarsNo(owner));
                     break;
+
                 case "ownerCarsList":
                     String owner1 = getOwnerName();
                     System.out.println("Cars list for " + owner1 + ": ");
                     this.getOwnerCarList(owner1);
                     break;
+
                 case "iterate1":
                     System.out.println("Iterate with FOR EACH LOOP");
                     this.iterateForEachLoop();
                     break;
+
                 case "iterare2":
                     System.out.println("Iterate with ITERATOR");
                     this.iterateIterator();
                     break;
+
+                case "reset":
+                    System.out.println("Reset successful!");
+                    this.reset(file);
+                    break;
+
                 case "quit":
                     quit = true;
+                    this.saveData(carRentalSystem, file);
+                    System.out.println("Save successful!");
                     break;
+
                 default:
                     System.out.println("Invalid command!");
                     break;
