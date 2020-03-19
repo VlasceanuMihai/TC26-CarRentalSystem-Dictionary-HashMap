@@ -242,6 +242,7 @@ public class CarRentalSystem implements Serializable {
                     break;
 
                 case "reset":
+                    quit = true;
                     System.out.println("Reset successful!");
                     this.reset(file);
                     break;
